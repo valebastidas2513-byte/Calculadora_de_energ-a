@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Consumo Eléctrico</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --bg: #f8fafc;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+            --danger: #ef4444;
+        }
+
+        * {
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 800px;
+            background: var(--card);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            margin-top: 0;
+            color: var(--primary);
+            font-size: 1.8rem;
+            text-align: center;
+        }
+
+        .tarifa-box {
+            background: #eff6ff;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+            border: 1px solid #bfdbfe;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr auto;
+            gap: 10px;
+            margin-bottom: 25px;
+            align-items: end;
+        }
+
+        @media (max-width: 650px) {
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .input-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+            color: #475569;
+        }
+
+        input {
+            padding: 10px;
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            font-size: 1rem;
+        }
+
+        input:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        button {
+            padding: 10px 18px;
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-delete {
+            background-color: var(--danger);
+            padding: 6px 10px;
+            font-size: 0.85rem;
+        }
+
+        .btn-delete:hover {
+            background-color: #dc2626;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            background-color: #f1f5f9;
+            font-size: 0.9rem;
+            color: #475569;
+        }
+
+        .resumen {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            background: #f1f5f9;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        @media (max-width: 600px) {
+            .resumen {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .stat-card h3 {
+            margin: 0;
+            font-size: 0.9rem;
+            color: #64748b;
+        }
+
+        .stat-card p {
+            margin: 8px 0 0;
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: var(--primary);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>⚡ Calculadora de Consumo Eléctrico</h1>
+
+    <!-- Configuración de tarifa -->
+    <div class="tarifa-box">
+        <label for="tarifa" style="margin:0; font-size: 1rem;">Costo por kWh ($):</label>
+        <input type="number" id="tarifa" value="850" step="0.01" min="0" oninput="actualizarCalculos()" style="width: 150px;">
+    </div>
+
+    <!-- Formulario para agregar equipos -->
+    <form id="form-equipo" class="form-grid" onsubmit="agregarEquipo(event)">
+        <div class="input-group">
+            <label for="nombre">Electrodoméstico</label>
+            <input type="text" id="nombre" placeholder="Ej. Nevera, TV..." required>
+        </div>
+        <div class="input-group">
+            <label for="watts">Potencia (Watts)</label>
+            <input type="number" id="watts" placeholder="Ej. 150" min="1" required>
+        </div>
+        <div class="input-group">
+            <label for="horas">Horas / día</label>
+            <input type="number" id="horas" placeholder="Ej. 8" step="0.1" min="0.1" max="24" required>
+        </div>
+        <div class="input-group">
+            <label for="cantidad">Cantidad</label>
+            <input type="number" id="cantidad" value="1" min="1" required>
+        </div>
+        <button type="submit">+ Agregar</button>
+    </form>
+
+    <!-- Tabla de dispositivos -->
+    <div style="overflow-x: auto;">
+        <table>
+            <thead>
+                <tr>
+                    <th>Equipo</th>
+                    <th>Cant.</th>
+                    <th>Potencia (W)</th>
+                    <th>Horas/Día</th>
+                    <th>kWh / Mes</th>
+                    <th>Costo / Mes</th>
+                    <th>Acción</th>
+                </tr>
+            </thead>
+            <tbody id="lista-equipos">
+                <!-- Se llena dinámicamente con JS -->
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Resultados Totales -->
+    <div class="resumen">
+        <div class="stat-card">
+            <h3>Consumo Diario</h3>
+            <p id="total-kwh-dia">0.00 kWh</p>
+        </div>
+        <div class="stat-card">
+            <h3>Consumo Mensual (30 días)</h3>
+            <p id="total-kwh-mes">0.00 kWh</p>
+        </div>
+        <div class="stat-card">
+            <h3>Costo Mensual Estimado</h3>
+            <p id="total-costo-mes">$0.00</p>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Datos iniciales de ejemplo
+    let equipos = [
+        { id: 1, nombre: "Nevera", watts: 150, horas: 24, cantidad: 1 },
+        { id: 2, nombre: "Televisor LED 50\"", watts: 100, horas: 5, cantidad: 1 },
+        { id: 3, nombre: "Bombillos LED", watts: 10, horas: 6, cantidad: 5 }
+    ];
+
+    function agregarEquipo(e) {
+        e.preventDefault();
+        
+        const nombre = document.getElementById('nombre').value;
+        const watts = parseFloat(document.getElementById('watts').value);
+        const horas = parseFloat(document.getElementById('horas').value);
+        const cantidad = parseInt(document.getElementById('cantidad').value);
+
+        const nuevoEquipo = {
+            id: Date.now(),
+            nombre,
+            watts,
+            horas,
+            cantidad
+        };
+
+        equipos.push(nuevoEquipo);
+        document.getElementById('form-equipo').reset();
+        document.getElementById('cantidad').value = 1;
+        
+        actualizarCalculos();
+    }
+
+    function eliminarEquipo(id) {
+        equipos = equipos.filter(eq => eq.id !== id);
+        actualizarCalculos();
+    }
+
+    function actualizarCalculos() {
+        const tbody = document.getElementById('lista-equipos');
+        const tarifa = parseFloat(document.getElementById('tarifa').value) || 0;
+        
+        tbody.innerHTML = '';
+
+        let totalKwhDia = 0;
+
+        equipos.forEach(eq => {
+            // Fórmula: (Watts * Horas * Cantidad) / 1000 = kWh por día
+            const kwhDia = (eq.watts * eq.horas * eq.cantidad) / 1000;
+            const kwhMes = kwhDia * 30;
+            const costoMes = kwhMes * tarifa;
+
+            totalKwhDia += kwhDia;
+
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${eq.nombre}</td>
+                <td>${eq.cantidad}</td>
+                <td>${eq.watts} W</td>
+                <td>${eq.horas} h</td>
+                <td>${kwhMes.toFixed(2)} kWh</td>
+                <td>$${costoMes.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</td>
+                <td><button class="btn-delete" onclick="eliminarEquipo(${eq.id})">Eliminar</button></td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        const totalKwhMes = totalKwhDia * 30;
+        const totalCostoMes = totalKwhMes * tarifa;
+
+        document.getElementById('total-kwh-dia').textContent = `${totalKwhDia.toFixed(2)} kWh`;
+        document.getElementById('total-kwh-mes').textContent = `${totalKwhMes.toFixed(2)} kWh`;
+        document.getElementById('total-costo-mes').textContent = `$${totalCostoMes.toLocaleString('es-CO', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    }
+
+    // Inicializar al cargar la página
+    actualizarCalculos();
+</script>
+
+</body>
+</html>
